@@ -1,0 +1,378 @@
+#compdef futhark
+#
+# zsh completion for futhark (futhark-lang.org)
+#
+# version:  0.0.0
+# github:   https://github.com/
+#
+# license: ISC License
+# Copyright (c) 2023. Oscar Nelin
+#
+# Permission to use, copy, modify, and/or distribute this software for
+# any purpose with or without fee is hereby granted, provided that the
+# above copyright notice and this permission notice appear in all
+# copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+# WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE
+# AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
+# DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+# PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+# TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+# PERFORMANCE OF THIS SOFTWARE.
+
+BACKENDS='c|cuda|hip|ispc|multicore|opencl|pyopencl|python|wasm|wasm-multicore'
+# Replace all | with spaces
+_option_backend='--backend=-[The backend used (defaults to ''opencl'').]:backend:'"(${BACKENDS//|/ })"
+
+_option_misc=(
+    '(- :)'{-h,--help}'[Print help and exit.]'
+    '(- :)'{-V,--version}'[Print version information and exit.]'
+)
+
+_option_runner=(
+    $_option_backend
+    '--futhark=-[The binary used for operations (defaults to 'futhark').]'
+    {-p-,*--pass-option=-}'[Pass this option to programs being run.]'
+    '--skip-compilation[Use already compiled program.]'
+    '--spec-file=-[Use test specification from this file.]'
+    '--timeout=-[Initial tuning timeout for each dataset. Later tuning runs are based off of the runtime of the first run.]'
+    '--tuning=-[Write tuning files with this extension (default: .tuning).]'
+    {-r-,--runs=-}'[Run each test case this many times.]'
+    '*:program:_files'
+    {-v,--verbose}'[Enable logging.  Pass multiple times for more.]'
+    $_option_misc
+)
+
+_compile_cmd() {
+    # TODO: Make it stop parsing arguments after program
+    _arguments -A "*.fut" \
+            '--Werror[Treat warnings as errors.]' \
+            '*--entry-point=-[Treat this function as an additional entry point.]' \
+            '--safe[Ignore 'unsafe' in code.]' \
+            '-o[Name of the compiled binary.]:program:_files' \
+            {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
+            '-w[Disable all warnings.]' \
+            '--executable[Generate an executable instead of a library (set by default).]' \
+            '--library[Generate a library instead of an executable.]' \
+            '--server[Generate a server executable instead of a library.]' \
+            '*:<program.fut>:_files -g \*.fut' \
+            $_option_misc
+}
+
+
+_autotune_cmd() {
+    _arguments $_option_runner
+}
+
+
+_bench_cmd() {
+    _arguments $_option_runner \
+           '--cache-extension=-[Use cache files with this extension (none by default).]' \
+           '--concurrency=-[Number of benchmarks to prepare (not run) concurrently.]' \
+           '--convergence-max-seconds=-[Limit convergence phase to this number of seconds.]' \
+            {-e-,--entry-point=-}'[Only run this entry point.]' \
+           '--exclude-case=-[Do not run test cases with this tag.]' \
+           '--ignore-files=-[Ignore files matching this regular expression.]' \
+           '--json=-[Scatter results in JSON format here.]:resultsjson:_files' \
+           '--no-convergence-phase[Do not run convergence phase.]' \
+           '--no-tuning[Do not load tuning files.]' \
+           '--pass-compiler-option=-[Pass this option to the compiler (or typechecker if in -t mode).]' \
+           '--runner=-[The program used to run the Futhark-generated programs (defaults to nothing).]'
+}
+
+_dev_cmd() {
+    _arguments $_option_misc \
+           $_option_backend \
+           '--ad[Apply AD operators]' \
+           '--ad-innermost[Apply innermost AD operators]' \
+           '--ast[Output ASTs instead of prettyprinted programs.]' \
+           '--babysit-kernels[Transpose kernel input arrays for better performance.]' \
+           '--call-graph[Print the resulting call graph.]' \
+           '--compile-imp-gpu[Translate pipeline result to ImpGPU and write it on stdout.]' \
+           '--compile-imp-multicore[Translate pipeline result to ImpMC write it on stdout.]' \
+           '--compile-imp-seq[Translate pipeline result to ImpSequential and write it on stdout.]' \
+           '--cse[Combine common subexpressions.]' \
+           '--defunctionalise[Defunctionalise the program.]' \
+           '--defunctorise[Partially evaluate all module constructs and print the residual program.]' \
+           '--double-buffer[Perform double buffering for merge parameters of sequential loops.]' \
+           '--entry-points=-[Treat this function as an additional entry point.]' \
+           '--executable[Generate an executable instead of a library (set by default).]' \
+           '--expand-allocations[Expand allocations]' \
+           '(-a --explicit-allocations)'{-a,--explicit-allocations}'[Transform program to explicit memory representation]' \
+           '--extract-kernels[Perform kernel extraction]' \
+           '--extract-multicore-parallelism[Extract multicore parallelism]' \
+           '(-f --first-order-transform)'{-f,--first-order-transform}'[Transform all SOACs to for-loops.]' \
+           '(-o --fuse-soacs)'{-o,--fuse-soacs}'[Perform higher-order optimisation, i.e., fusion.]' \
+           '--fusion-graph[Print fusion graph.]' \
+           '--gpu[Run the default optimised kernels pipeline]' \
+           '--gpu-mem[Run the full GPU compilation pipeline]' \
+           '(-h --help)'{-h,--help}'[Print help and exit.]' \
+           '--hist-accs[Turn certain accumulations into histograms]' \
+           '--in-place-lowering[Lower in-place updates into loops]' \
+           '--inline-aggressively[Aggressively inline and remove resulting dead functions.]' \
+           '--inline-conservatively[Conservatively inline and remove resulting dead functions.]' \
+           '--library[Generate a library instead of an executable.]' \
+           '--lift-allocations[lift allocations]' \
+           '--lift-allocations-gpu[lift allocations gpu]' \
+           '--lift-lambdas[Lambda-lift the program.]' \
+           '--lower-allocations[lower allocations]' \
+           '--lower-allocations-gpu[lower allocations gpu]' \
+           '--mc[Run the multicore compilation pipeline]' \
+           '--mc-mem[Run the multicore+memory compilation pipeline]' \
+           '--memory-block-merging[memory block merging allocations]' \
+           '(-m --metrics)'{-m,--metrics}'[Print AST metrics of the resulting internal representation on standard output.]' \
+           '--monomorphise[Monomorphise the program.]' \
+           '--no-check[Disable type-checking.]' \
+           '--normalise[Fully normalise the program.]' \
+           '--pretty-print[Parse and prettyString-print the AST of the given program.]' \
+           '(-p --print)'{-p,--print}'[Print the resulting IR (default action).]' \
+           '--print-aliases[Print the resulting IR with aliases.]' \
+           '--print-interference-gpu[Print interference information.]' \
+           '--print-last-use-gpu[Print last use information ss.]' \
+           '--print-mem-alias-gpu[Print memory alias information.]' \
+           '--reduce-device-synchronizations[Move host statements to device to reduce blocking memory operations.]' \
+           '--remove-dead-functions[Remove the functions that are unreachable from entry points]' \
+           '--safe[Ignore 'unsafe'.]' \
+           '--seq[Run the sequential CPU compilation pipeline]' \
+           '--seq-mem[Run the sequential CPU+memory compilation pipeline]' \
+           '--server[Generate a server executable.]' \
+           '--short-circuit[Array Short-Circuiting]' \
+           '--short-circuit-gpu[Array Short-Circuiting (GPU)]' \
+           '--short-circuit-mc[Array Short-Circuiting (MC)]' \
+           '(-e --simplify)'{-e,--simplify}'[Perform simple enabling optimisations.]' \
+           '--sink[move memory loads closer to their uses]' \
+           '(-s --standard)'{-s,--standard}'[Run the default optimised pipeline]' \
+           '--tile-loops[Tile stream loops inside kernels]' \
+           '(-t --type-check)'{-t,--type-check}'[Print on standard output the type-checked program.]' \
+           '--unstream[sequentialise remaining SOACs]' \
+           '(-V --version)'{-V,--version}'[Print version information and exit.]' \
+           '-w[Disable all warnings.]' \
+           '--Werror[Treat warnings as errors.]' \
+            {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
+           '(- *):program:_files'
+}
+
+
+#_pkg_cmd() {
+#    local line state
+#
+#    _values "" \
+#        $_option_misc \
+#        'add[Add another required package to futhark.pkg.]::->add' \
+#        'check[Check that futhark.pkg is satisfiable.]::->check' \
+#        'init[Create a new futhark.pkg and a lib/ skeleton.]::->init' \
+#        'fmt[Reformat futhark.pkg.]::->fmt' \
+#        'sync[Populate lib/ as specified by futhark.pkg.]::->sync' \
+#        'remove[Remove a required package from futhark.pkg.]::->remove' \
+#        'upgrade[Upgrade all packages to newest versions.]::->upgrade' \
+#        'versions[List available versions for a package.]::->versions'
+#    case $state in
+#        add)
+#            ;;
+#        check)
+#            ;;
+#        init)
+#            ;;
+#        fmt)
+#            ;;
+#        sync)
+#            ;;
+#        remove)
+#            ;;
+#        upgrade)
+#            ;;
+#        versions)
+#            ;;
+#    esac
+#}
+
+_futhark() {
+
+    local line state
+
+    _arguments -C \
+        "1:subcommand:->subcommand" \
+        "*::arg:->args"
+
+    case $state in
+        (subcommand)
+            _values "futhark <subcommand>" \
+                $_option_misc \
+                "autotune[Autotune threshold parameters.]" \
+                "bench[Benchmark Futhark programs.]" \
+                "benchcmp[Compare two benchmark results.]" \
+                "c[Compile to sequential C.]" \
+                "check[Type-check a program.]" \
+                "check-syntax[Syntax-check a program.]" \
+                "cuda[Compile to C calling CUDA.]" \
+                "datacmp[Compare Futhark data files for equality.]" \
+                "dataget[Extract test data.]" \
+                "dataset[Generate random test data.]" \
+                "defs[Show location and name of all definitions.]" \
+                "dev[Run compiler passes directly.]" \
+                "doc[Generate documentation for Futhark code.]" \
+                "eval[Evaluate Futhark expressions passed in as arguments]" \
+                "hash[Print hash of program AST.]" \
+                "hip[Compile to C calling HIP.]" \
+                "imports[Print all non-builtin imported Futhark files.]" \
+                "ispc[Compile to multicore ISPC]" \
+                "literate[Process a literate Futhark program.]" \
+                "lsp[Run LSP server.]" \
+                "multicore[Compile to multicore C.]" \
+                "opencl[Compile to C calling OpenCL.]" \
+                "pkg[Manage local packages.]" \
+                "pyopencl[Compile to Python calling PyOpenCL.]" \
+                "python[Compile to sequential Python.]" \
+                "query[Query semantic information about program.]" \
+                "repl[Run interactive Read-Eval-Print-Loop.]" \
+                "run[Run a program through the (slow!) interpreter.]" \
+                "test[Test Futhark programs.]" \
+                "thanks[Express gratitude.]" \
+                "tokens[Print tokens from Futhark file.]" \
+                "wasm[Compile to WASM with sequential C]" \
+                "wasm-multicore[Compile to WASM with multicore C]"
+
+            ;;
+        (args)
+            # The tilde toggles GLOB_SUBST for the evaluation of $BACKENDS
+            case $line[1] in
+                ${~BACKENDS})
+                    _compile_cmd
+                    ;;
+                autotune)
+                    _autotune_cmd
+                    ;;
+                bench)
+                    _bench_cmd
+                    ;;
+                benchcmp)
+                    _arguments $_option_misc \
+                        '1:program1:_files'  \
+                        '(- 2 *):program2:_files'
+                    ;;
+                check)
+                    _arguments $_option_misc \
+                        '-w[Disable all warnings.]' \
+                        '(- 1 *):program:_files -g \*.fut'
+                    ;;
+                check-syntax)
+                    _arguments $_option_misc \
+                        '(- 1 *):program:_files -g \*.fut'
+                    ;;
+                datacmp)
+                    _arguments $_option_misc \
+                        '1:dataset1:_files'  \
+                        '(- 2 *):dataset2:_files'
+                    ;;
+                dataget)
+                    _arguments $_option_misc \
+                        '1:program:_files -g \*.fut'  \
+                        '(- 2 *):dataset:_files'
+                    ;;
+                dataset)
+                    _arguments $_option_misc \
+                        '(-b --binary)'{-b,--binary}'[Output data in binary Futhark format (must precede --generate).]' \
+                        '--f16-bounds=-[Range of f16 values.]'\
+                        '--f32-bounds=-[Range of f32 values.]'\
+                        '--f64-bounds=-[Range of f64 values.]'\
+                        '(-g --generate)'{-g-,--generate=-}'[Generate a random value of this type.]' \
+                        '--i16-bounds=-[Range of i16 values.]'\
+                        '--i32-bounds=-[Range of i32 values.]'\
+                        '--i64-bounds=-[Range of i64 values.]'\
+                        '--i8-bounds=-[Range of i8 values.]'\
+                        '(-s --seed)'{-s-,--seed=-}'[The seed to use when initialising the RNG.]' \
+                        '--text[Output data in text format (default; must precede --generate).]'\
+                        '(-t --type)'{-t,--type}'[Output the type (textually) rather than the value (must precede --generate).]' \
+                        '--u16-bounds=-[Range of u16 values.]'\
+                        '--u32-bounds=-[Range of u32 values.]'\
+                        '--u64-bounds=-[Range of u64 values.]'\
+                        '--u8-bounds=-[Range of u8 values.]'
+                    ;;
+                defs|hash|imports|repl|tokens)
+                    _arguments $_option_misc \
+                        '*:programs:_files -g \*.fut'
+                    ;;
+                dev)
+                    _dev_cmd
+                    ;;
+                doc)
+                    _arguments $_option_misc \
+                        '(-o --output-directory)'{-o-,--output-directory=-}'[Directory in which to put generated documentation.]:dir:_file' \
+                        '(-v --verbose)'{-v,--verbose}'[Print status messages on stderr.]' \
+                        '*:programs:_files -g \*.fut'
+                    ;;
+                eval)
+                    _arguments $_option_misc \
+                        '(-f --file)'{-f-,--file=-}'[The file to load before evaluating expressions.]:file:_file' \
+                        '(-w --no-warnings)'{-w,--no-warnings}'[Do not print warnings.]' \
+                        '*:exprs:'
+                    ;;
+                literate)
+                    _arguments $_option_misc \
+                        $_option_backend \
+                        '--futhark=-[The binary used for operations (defaults to 'futhark').]' \
+                        '(-o --output)'{-o-,--output=-}'[Override output file. Image directory is set to basename appended with -img/.]' \
+                        '--pass-compiler-option=-[Pass this option to the compiler (or typechecker if in -t mode).]' \
+                        {-p-,*--pass-option=-}'[Pass this option to programs being run.]' \
+                        '--skip-compilation[Use already compiled program.]' \
+                        '--stop-on-error[Stop and do not produce output file if any directive fails.]' \
+                        {-v,--verbose}'[Enable logging.  Pass multiple times for more.]'
+                    ;;
+
+                # The LSP takes no arguments
+                lsp);;
+
+                pkg)
+                    # Do this later
+                    #_pkg_cmd
+                    ;;
+
+                query)
+                    _arguments $_option_misc \
+                        '1:programs:_files -g \*.fut' \
+                        '2:line:' \
+                        '3:col:'
+                    ;;
+
+                run)
+                    _arguments $_option_misc \
+                        '(-w --no-warnings)'{-w,--no-warnings}'[Do not print warnings.]' \
+                        {-e-,--entry-point=-}'[Only run this entry point.]' \
+                        '(- 1 *):program:_files -g \*.fut'
+                    ;;
+                test)
+                    _arguments $_option_misc \
+                        $_option_backend \
+                        '--cache-extension=-[Use cache files with this extension (none by default).]' \
+                        '(-C --compile)'{-C,--compile}'[Only compile, do not run.]' \
+                        '(-c --compiled)'{-c,--compiled}'[Only run compiled code (the default)]' \
+                        '--concurrency=-[Number of tests to run concurrently.]'\
+                        '--exclude=-[Exclude test programs that define this tag.]'\
+                        '--futhark=-[The binary used for operations (defaults to 'futhark').]' \
+                        '(-I --internalise)'{-I,--internalise}'[Only run the compiler frontend.]' \
+                        '(-i --interpreted)'{-i,--interpreted}'[Only interpret]' \
+                        '(--no-terminal --notty)'{--no-terminal,--notty}'[Provide simpler line-based output.]' \
+                        '--no-tuning[Do not load tuning files.]' \
+                        '*--pass-compiler-option=-[Pass this option to the compiler (or typechecker if in -t mode).]'\
+                        {*-p-,*--pass-option=-}'[Pass this option to programs being run.]' \
+                        '--runner=-[The program used to run the Futhark-generated programs (defaults to nothing).]'\
+                        '(-t --typecheck)'{-t,--typecheck}'[Only perform type-checking]' \
+                        '*:program:_files'
+                    ;;
+                thanks);; # Selvtak
+                *) false ;;
+            esac ;;
+    esac
+}
+
+_futhark "$@"
+
+# Local Variables:
+# mode: Shell-Script
+# sh-indentation: 4
+# indent-tabs-mode: nil
+# sh-basic-offset: 4
+# End:
+# vim: ft=zsh sw=4 ts=4 et
