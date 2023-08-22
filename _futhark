@@ -22,138 +22,6 @@
 # TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 # PERFORMANCE OF THIS SOFTWARE.
 
-BACKENDS='c|cuda|hip|ispc|multicore|opencl|pyopencl|python|wasm|wasm-multicore'
-# Replace all | with spaces
-_option_backend='--backend=-[The backend used (defaults to ''opencl'').]:backend:'"(${BACKENDS//|/ })"
-
-_option_misc=(
-    '(- :)'{-h,--help}'[Print help and exit.]'
-    '(- :)'{-V,--version}'[Print version information and exit.]'
-)
-
-_option_runner=(
-    $_option_backend
-    '--futhark=-[The binary used for operations (defaults to 'futhark').]'
-    {-p-,*--pass-option=-}'[Pass this option to programs being run.]'
-    '--skip-compilation[Use already compiled program.]'
-    '--spec-file=-[Use test specification from this file.]'
-    '--timeout=-[Initial tuning timeout for each dataset. Later tuning runs are based off of the runtime of the first run.]'
-    '--tuning=-[Write tuning files with this extension (default: .tuning).]'
-    {-r-,--runs=-}'[Run each test case this many times.]'
-    '*:program:_files'
-    {-v,--verbose}'[Enable logging.  Pass multiple times for more.]'
-    $_option_misc
-)
-
-_compile_cmd() {
-    # TODO: Make it stop parsing arguments after program
-    _arguments -A "*.fut" \
-            '--Werror[Treat warnings as errors.]' \
-            '*--entry-point=-[Treat this function as an additional entry point.]' \
-            '--safe[Ignore 'unsafe' in code.]' \
-            '-o[Name of the compiled binary.]:program:_files' \
-            {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
-            '-w[Disable all warnings.]' \
-            '--executable[Generate an executable instead of a library (set by default).]' \
-            '--library[Generate a library instead of an executable.]' \
-            '--server[Generate a server executable instead of a library.]' \
-            '*:<program.fut>:_files -g \*.fut' \
-            $_option_misc
-}
-
-
-_autotune_cmd() {
-    _arguments $_option_runner
-}
-
-
-_bench_cmd() {
-    _arguments $_option_runner \
-           '--cache-extension=-[Use cache files with this extension (none by default).]' \
-           '--concurrency=-[Number of benchmarks to prepare (not run) concurrently.]' \
-           '--convergence-max-seconds=-[Limit convergence phase to this number of seconds.]' \
-            {-e-,--entry-point=-}'[Only run this entry point.]' \
-           '--exclude-case=-[Do not run test cases with this tag.]' \
-           '--ignore-files=-[Ignore files matching this regular expression.]' \
-           '--json=-[Scatter results in JSON format here.]:resultsjson:_files' \
-           '--no-convergence-phase[Do not run convergence phase.]' \
-           '--no-tuning[Do not load tuning files.]' \
-           '--pass-compiler-option=-[Pass this option to the compiler (or typechecker if in -t mode).]' \
-           '--runner=-[The program used to run the Futhark-generated programs (defaults to nothing).]'
-}
-
-_dev_cmd() {
-    _arguments $_option_misc \
-           $_option_backend \
-           '--ad[Apply AD operators]' \
-           '--ad-innermost[Apply innermost AD operators]' \
-           '--ast[Output ASTs instead of prettyprinted programs.]' \
-           '--babysit-kernels[Transpose kernel input arrays for better performance.]' \
-           '--call-graph[Print the resulting call graph.]' \
-           '--compile-imp-gpu[Translate pipeline result to ImpGPU and write it on stdout.]' \
-           '--compile-imp-multicore[Translate pipeline result to ImpMC write it on stdout.]' \
-           '--compile-imp-seq[Translate pipeline result to ImpSequential and write it on stdout.]' \
-           '--cse[Combine common subexpressions.]' \
-           '--defunctionalise[Defunctionalise the program.]' \
-           '--defunctorise[Partially evaluate all module constructs and print the residual program.]' \
-           '--double-buffer[Perform double buffering for merge parameters of sequential loops.]' \
-           '--entry-points=-[Treat this function as an additional entry point.]' \
-           '--executable[Generate an executable instead of a library (set by default).]' \
-           '--expand-allocations[Expand allocations]' \
-           '(-a --explicit-allocations)'{-a,--explicit-allocations}'[Transform program to explicit memory representation]' \
-           '--extract-kernels[Perform kernel extraction]' \
-           '--extract-multicore-parallelism[Extract multicore parallelism]' \
-           '(-f --first-order-transform)'{-f,--first-order-transform}'[Transform all SOACs to for-loops.]' \
-           '(-o --fuse-soacs)'{-o,--fuse-soacs}'[Perform higher-order optimisation, i.e., fusion.]' \
-           '--fusion-graph[Print fusion graph.]' \
-           '--gpu[Run the default optimised kernels pipeline]' \
-           '--gpu-mem[Run the full GPU compilation pipeline]' \
-           '(-h --help)'{-h,--help}'[Print help and exit.]' \
-           '--hist-accs[Turn certain accumulations into histograms]' \
-           '--in-place-lowering[Lower in-place updates into loops]' \
-           '--inline-aggressively[Aggressively inline and remove resulting dead functions.]' \
-           '--inline-conservatively[Conservatively inline and remove resulting dead functions.]' \
-           '--library[Generate a library instead of an executable.]' \
-           '--lift-allocations[lift allocations]' \
-           '--lift-allocations-gpu[lift allocations gpu]' \
-           '--lift-lambdas[Lambda-lift the program.]' \
-           '--lower-allocations[lower allocations]' \
-           '--lower-allocations-gpu[lower allocations gpu]' \
-           '--mc[Run the multicore compilation pipeline]' \
-           '--mc-mem[Run the multicore+memory compilation pipeline]' \
-           '--memory-block-merging[memory block merging allocations]' \
-           '(-m --metrics)'{-m,--metrics}'[Print AST metrics of the resulting internal representation on standard output.]' \
-           '--monomorphise[Monomorphise the program.]' \
-           '--no-check[Disable type-checking.]' \
-           '--normalise[Fully normalise the program.]' \
-           '--pretty-print[Parse and prettyString-print the AST of the given program.]' \
-           '(-p --print)'{-p,--print}'[Print the resulting IR (default action).]' \
-           '--print-aliases[Print the resulting IR with aliases.]' \
-           '--print-interference-gpu[Print interference information.]' \
-           '--print-last-use-gpu[Print last use information ss.]' \
-           '--print-mem-alias-gpu[Print memory alias information.]' \
-           '--reduce-device-synchronizations[Move host statements to device to reduce blocking memory operations.]' \
-           '--remove-dead-functions[Remove the functions that are unreachable from entry points]' \
-           '--safe[Ignore 'unsafe'.]' \
-           '--seq[Run the sequential CPU compilation pipeline]' \
-           '--seq-mem[Run the sequential CPU+memory compilation pipeline]' \
-           '--server[Generate a server executable.]' \
-           '--short-circuit[Array Short-Circuiting]' \
-           '--short-circuit-gpu[Array Short-Circuiting (GPU)]' \
-           '--short-circuit-mc[Array Short-Circuiting (MC)]' \
-           '(-e --simplify)'{-e,--simplify}'[Perform simple enabling optimisations.]' \
-           '--sink[move memory loads closer to their uses]' \
-           '(-s --standard)'{-s,--standard}'[Run the default optimised pipeline]' \
-           '--tile-loops[Tile stream loops inside kernels]' \
-           '(-t --type-check)'{-t,--type-check}'[Print on standard output the type-checked program.]' \
-           '--unstream[sequentialise remaining SOACs]' \
-           '(-V --version)'{-V,--version}'[Print version information and exit.]' \
-           '-w[Disable all warnings.]' \
-           '--Werror[Treat warnings as errors.]' \
-            {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
-           '(- *):program:_files'
-}
-
 
 #_pkg_cmd() {
 #    local line state
@@ -191,6 +59,28 @@ _dev_cmd() {
 _futhark() {
 
     local line state
+    local BACKENDS='c|cuda|hip|ispc|multicore|opencl|pyopencl|python|wasm|wasm-multicore'
+    # Replace all | with spaces
+    local _option_backend='--backend=-[The backend used (defaults to ''opencl'').]:backend:'"(${BACKENDS//|/ })"
+
+    local _option_misc=(
+        '(- :)'{-h,--help}'[Print help and exit.]'
+        '(- :)'{-V,--version}'[Print version information and exit.]'
+    )
+
+    local _option_runner=(
+        $_option_backend
+        '--futhark=-[The binary used for operations (defaults to 'futhark').]'
+        {-p-,*--pass-option=-}'[Pass this option to programs being run.]'
+        '--skip-compilation[Use already compiled program.]'
+        '--spec-file=-[Use test specification from this file.]'
+        '--timeout=-[Initial tuning timeout for each dataset. Later tuning runs are based off of the runtime of the first run.]'
+        '--tuning=-[Write tuning files with this extension (default: .tuning).]'
+        {-r-,--runs=-}'[Run each test case this many times.]'
+        '*:program:_files'
+        {-v,--verbose}'[Enable logging.  Pass multiple times for more.]'
+        $_option_misc
+    )
 
     _arguments -C \
         "1:subcommand:->subcommand" \
@@ -239,13 +129,36 @@ _futhark() {
             # The tilde toggles GLOB_SUBST for the evaluation of $BACKENDS
             case $line[1] in
                 ${~BACKENDS})
-                    _compile_cmd
+                    # TODO: Make it stop parsing arguments after program
+                    _arguments -A "*.fut" \
+                        '--Werror[Treat warnings as errors.]' \
+                        '*--entry-point=-[Treat this function as an additional entry point.]' \
+                        '--safe[Ignore 'unsafe' in code.]' \
+                        '-o[Name of the compiled binary.]:program:_files' \
+                        {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
+                        '-w[Disable all warnings.]' \
+                        '--executable[Generate an executable instead of a library (set by default).]' \
+                        '--library[Generate a library instead of an executable.]' \
+                        '--server[Generate a server executable instead of a library.]' \
+                        '*:<program.fut>:_files -g \*.fut' \
+                        $_option_misc
                     ;;
                 autotune)
-                    _autotune_cmd
+                    _arguments $_option_runner
                     ;;
                 bench)
-                    _bench_cmd
+                    _arguments $_option_runner \
+                        '--cache-extension=-[Use cache files with this extension (none by default).]' \
+                        '--concurrency=-[Number of benchmarks to prepare (not run) concurrently.]' \
+                        '--convergence-max-seconds=-[Limit convergence phase to this number of seconds.]' \
+                        {-e-,--entry-point=-}'[Only run this entry point.]' \
+                        '--exclude-case=-[Do not run test cases with this tag.]' \
+                        '--ignore-files=-[Ignore files matching this regular expression.]' \
+                        '--json=-[Scatter results in JSON format here.]:resultsjson:_files' \
+                        '--no-convergence-phase[Do not run convergence phase.]' \
+                        '--no-tuning[Do not load tuning files.]' \
+                        '--pass-compiler-option=-[Pass this option to the compiler (or typechecker if in -t mode).]' \
+                        '--runner=-[The program used to run the Futhark-generated programs (defaults to nothing).]'
                     ;;
                 benchcmp)
                     _arguments $_option_misc \
@@ -295,7 +208,75 @@ _futhark() {
                         '*:programs:_files -g \*.fut'
                     ;;
                 dev)
-                    _dev_cmd
+                    _arguments $_option_misc \
+                        $_option_backend \
+                        '--ad[Apply AD operators]' \
+                        '--ad-innermost[Apply innermost AD operators]' \
+                        '--ast[Output ASTs instead of prettyprinted programs.]' \
+                        '--babysit-kernels[Transpose kernel input arrays for better performance.]' \
+                        '--call-graph[Print the resulting call graph.]' \
+                        '--compile-imp-gpu[Translate pipeline result to ImpGPU and write it on stdout.]' \
+                        '--compile-imp-multicore[Translate pipeline result to ImpMC write it on stdout.]' \
+                        '--compile-imp-seq[Translate pipeline result to ImpSequential and write it on stdout.]' \
+                        '--cse[Combine common subexpressions.]' \
+                        '--defunctionalise[Defunctionalise the program.]' \
+                        '--defunctorise[Partially evaluate all module constructs and print the residual program.]' \
+                        '--double-buffer[Perform double buffering for merge parameters of sequential loops.]' \
+                        '--entry-points=-[Treat this function as an additional entry point.]' \
+                        '--executable[Generate an executable instead of a library (set by default).]' \
+                        '--expand-allocations[Expand allocations]' \
+                        '(-a --explicit-allocations)'{-a,--explicit-allocations}'[Transform program to explicit memory representation]' \
+                        '--extract-kernels[Perform kernel extraction]' \
+                        '--extract-multicore-parallelism[Extract multicore parallelism]' \
+                        '(-f --first-order-transform)'{-f,--first-order-transform}'[Transform all SOACs to for-loops.]' \
+                        '(-o --fuse-soacs)'{-o,--fuse-soacs}'[Perform higher-order optimisation, i.e., fusion.]' \
+                        '--fusion-graph[Print fusion graph.]' \
+                        '--gpu[Run the default optimised kernels pipeline]' \
+                        '--gpu-mem[Run the full GPU compilation pipeline]' \
+                        '(-h --help)'{-h,--help}'[Print help and exit.]' \
+                        '--hist-accs[Turn certain accumulations into histograms]' \
+                        '--in-place-lowering[Lower in-place updates into loops]' \
+                        '--inline-aggressively[Aggressively inline and remove resulting dead functions.]' \
+                        '--inline-conservatively[Conservatively inline and remove resulting dead functions.]' \
+                        '--library[Generate a library instead of an executable.]' \
+                        '--lift-allocations[lift allocations]' \
+                        '--lift-allocations-gpu[lift allocations gpu]' \
+                        '--lift-lambdas[Lambda-lift the program.]' \
+                        '--lower-allocations[lower allocations]' \
+                        '--lower-allocations-gpu[lower allocations gpu]' \
+                        '--mc[Run the multicore compilation pipeline]' \
+                        '--mc-mem[Run the multicore+memory compilation pipeline]' \
+                        '--memory-block-merging[memory block merging allocations]' \
+                        '(-m --metrics)'{-m,--metrics}'[Print AST metrics of the resulting internal representation on standard output.]' \
+                        '--monomorphise[Monomorphise the program.]' \
+                        '--no-check[Disable type-checking.]' \
+                        '--normalise[Fully normalise the program.]' \
+                        '--pretty-print[Parse and prettyString-print the AST of the given program.]' \
+                        '(-p --print)'{-p,--print}'[Print the resulting IR (default action).]' \
+                        '--print-aliases[Print the resulting IR with aliases.]' \
+                        '--print-interference-gpu[Print interference information.]' \
+                        '--print-last-use-gpu[Print last use information ss.]' \
+                        '--print-mem-alias-gpu[Print memory alias information.]' \
+                        '--reduce-device-synchronizations[Move host statements to device to reduce blocking memory operations.]' \
+                        '--remove-dead-functions[Remove the functions that are unreachable from entry points]' \
+                        '--safe[Ignore 'unsafe'.]' \
+                        '--seq[Run the sequential CPU compilation pipeline]' \
+                        '--seq-mem[Run the sequential CPU+memory compilation pipeline]' \
+                        '--server[Generate a server executable.]' \
+                        '--short-circuit[Array Short-Circuiting]' \
+                        '--short-circuit-gpu[Array Short-Circuiting (GPU)]' \
+                        '--short-circuit-mc[Array Short-Circuiting (MC)]' \
+                        '(-e --simplify)'{-e,--simplify}'[Perform simple enabling optimisations.]' \
+                        '--sink[move memory loads closer to their uses]' \
+                        '(-s --standard)'{-s,--standard}'[Run the default optimised pipeline]' \
+                        '--tile-loops[Tile stream loops inside kernels]' \
+                        '(-t --type-check)'{-t,--type-check}'[Print on standard output the type-checked program.]' \
+                        '--unstream[sequentialise remaining SOACs]' \
+                        '(-V --version)'{-V,--version}'[Print version information and exit.]' \
+                        '-w[Disable all warnings.]' \
+                        '--Werror[Treat warnings as errors.]' \
+                         {-v-,--verbose=-}'[Print verbose output on standard error; wrong program to FILE.]' \
+                        '(- *):program:_files'
                     ;;
                 doc)
                     _arguments $_option_misc \
